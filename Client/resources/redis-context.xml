@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+         http://www.springframework.org/schema/context/spring-context.xsd">
+
+
+    <!-- scanner redis properties -->
+    <context:property-placeholder location="classpath:redis.properties" ignore-unresolvable="true"/>
+
+
+    <!-- 如果你有多个数据源需要通过<context:proerty-placeholder 管理,且不愿意放在一个配置文件，那么一定要加上ignore-unresolvable="true"-->
+    <!-- 新版本的（具体从哪个版本不清楚）JedisPoolConfig的property name 不是maxActive而是maxTotal.而且没有maxWait属性，建议看一下Jedis源码-->
+    <!-- redis连接池 -->
+    <bean id="PoolConfig" class="redis.clients.jedis.JedisPoolConfig">
+        <!-- 连接池的最大数据库连接数 -->
+        <property name="maxTotal" value="${redis.maxActive}"/>
+        <!-- 最大空闲数 -->
+        <property name="maxIdle" value="${redis.maxIdle}"/>
+        <!-- 最大建立连接等待时间 -->
+        <property name="maxWaitMillis" value="${redis.maxWait}"/>
+        <!-- 逐出连接的最小空闲时间 默认1800000好美妙（30分钟）-->
+<!--        <property name="minEvictableIdleTimeMillis" value="${redis.minEvictableIdleTimeMillis}"/>-->
+        <!-- 每次逐出检查时 逐出最大数目如果为负数就是 ：1/abs(n) 默认3 -->
+<!--        <property name="numTestsPerEvictionRun" value="${redis.numTestsPerEvictionRun}"/>-->
+        <!-- 逐出扫描的时间间隔（毫秒）如果为负数 则不运行逐出线程 默认-1-->
+<!--        <property name="timeBetweenEvictionRunsMillis" value="${redis.timeBetweenEvictionRunsMillis}"/>-->
+        <!-- 是否在从池中取出连接前进行检验，如果检验失败，则从池中去除连接并尝试取出另一个 -->
+        <property name="testOnBorrow" value="${redis.testOnBorrow}"/>
+        <!-- 在空闲时间检查有效性，默认false -->
+<!--        <property name="testWhileIdle" value="${redis.testWhileIdle}"/>-->
+    </bean>
+    <!--redis连接工厂-->
+    <bean id="connectionFactory" class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
+        <property name="poolConfig" ref="PoolConfig"/>
+        <!-- Ip 地址 -->
+        <property name="hostName" value="${redis.host}"/>
+        <!-- 端口号-->
+        <property name="port" value="${redis.port}"/>
+        <!-- 如果redis 设置有密码 -->
+        <property name="password" value="${redis.password}"/>
+        <!-- 客户端超时时间单位是毫秒 -->
+<!--        <property name="timeout" value="${redis.timeout}"/>-->
+    </bean>
+    <!-- redis操作模版 这里采用面向对象的模版 -->
+    <bean id="redisTemplate" class="org.springframework.data.redis.core.StringRedisTemplate">
+        <property name="connectionFactory" ref="connectionFactory"/>
+        <!-- 如果不配置Serializer 那么存储的时候只能使用String类型如果用对象类型存储 那么会提示错误
+        can’t cast to String -->
+        <property name="keySerializer">
+            <bean class="org.springframework.data.redis.serializer.StringRedisSerializer"/>
+        </property>
+        <property name="valueSerializer">
+            <bean class="org.springframework.data.redis.serializer.JdkSerializationRedisSerializer"/>
+        </property>
+        <property name="hashKeySerializer">
+            <bean class="org.springframework.data.redis.serializer.StringRedisSerializer"/>
+        </property>
+        <property name="hashValueSerializer">
+            <bean class="org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer"/>
+        </property>
+<!--        &lt;!&ndash; 开启事务 &ndash;&gt;
+        <property name="enableTransactionSupport" value="true"/>-->
+    </bean>
+    <bean id="redisUtil" class="com.jnshu.util.RedisUtil">
+        <property name="redisTemplate" ref="redisTemplate"/>
+    </bean>
+
+</beans>
