@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context" xmlns:p="http://www.springframework.org/schema/p"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:annotation-config />
+    <!-- 配置 service -->
+    <context:component-scan base-package="com.jnshu.service" />
+
+    <context:property-placeholder location="classpath:db.properties" ignore-unresolvable="true" />
+
+    <!-- 数据源，使用dbcp -->
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+          destroy-method="close">
+        <property name="driverClassName" value="${jdbc.driver}"/>
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+        <!-- 连接池的最大数据库连接数，设为0表示无限制 -->
+        <property name="maxActive" value="10"/>
+        <!-- 最大空闲书，数据库连接的最大空闲时间。超过空闲时间，数据库连接将标记不可用，然后被释放，设为0表示无限制-->
+        <property name="maxIdle" value="5"/>
+    </bean>
+
+    <!-- 配置事务管理器 -->
+    <bean id="transactionManager"
+          class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <!-- 注入数据库连接池 -->
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <!-- sqlSessionFactory -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="typeAliasesPackage" value="com.jnshu.entity"/>
+        <property name="mapperLocations" value="classpath:com/jnshu/mapper/*.xml"/>
+        <!-- 数据库连接池 -->
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+        <property name="basePackage" value="com.jnshu.mapper"/>
+    </bean>
+
+    <!-- 阿里云短信 -->
+    <context:property-placeholder location="classpath:SMS.properties" ignore-unresolvable="true"/>
+    <bean id="smsUtil" class="com.jnshu.util.SMSUtil">
+        <constructor-arg name="accessKeyId" value="${sms.accessKeyId}"/>
+        <constructor-arg name="accessKeySecret" value="${sms.accessKeySecret}"/>
+        <constructor-arg name="SignName" value="${sms.SignName}"/>
+        <constructor-arg name="TemplateCode" value="${sms.TemplateCode}"/>
+    </bean>
+    <!--七牛云对象存储配置-->
+    <bean class="com.jnshu.util.QiniuOSSAPI">
+        <property name="accessKeyId" value="9kcwkcYj4zRtoXRnzAE4UUu1lXiU8V_c4gUuCiBE"/>
+        <property name="accessKeySecret" value="6PagIBO-xFcZAurdMiL8H3yeIXUHgry7WValVJD3"/>
+        <property name="bucketName" value="lixiaobaivv"/>
+    </bean>
+    <!-- 阿里云邮箱 -->
+    <bean id="sendMailSDK" class="com.jnshu.util.SendMailSDK"/>
+    <!-- 阿里云oss-->
+    <bean id="aliyunOSSAPI" class="com.jnshu.util.AliyunOSSAPI"/>
+
+
+    <bean id="rmiServer" class="org.springframework.remoting.rmi.RmiServiceExporter">
+        <!-- 设置服务名称   客户端会依据此服务名来获取远程对象接口的实现类-->
+        <property name="serviceName" value="helloRMI"/>
+        <!-- 设置服务类 这里是将远程接口的实现类设置到RMI服务中-->
+        <property name="service" ref="studentServiceImpl"/>
+        <!-- 设置服务接口 这里是将远程接口设置RMI服务接口-->
+        <property name="serviceInterface" value="com.jnshu.service.StudentService"/>
+        <!-- 注册端口号 用来暴露发现服务  这里是为RMI服务端远程对象注册设置端口号-->
+        <property name="registryPort" value="9998"/>
+        <!-- 设置服务端口号 用来传输数据 这个参数是可选的当然不设置的时候 数据传输的时候使用的是随机的端口号 -->
+        <property name="servicePort" value="9998"/>
+    </bean>
+
+    <!-- 邮箱接口 -->
+    <bean id="emailService" class="org.springframework.remoting.rmi.RmiServiceExporter">
+        <property name="serviceName" value="EmailService"/>
+        <property name="service" ref="emailServiceImpl"/>
+        <property name="serviceInterface" value="com.jnshu.service.EmailService"/>
+        <property name="registryPort" value="9998"/>
+        <property name="servicePort" value="9998"/>
+    </bean>
+    <!-- 阿里云接口 -->
+    <bean id="serviceOSS" class="org.springframework.remoting.rmi.RmiServiceExporter">
+        <property name="serviceName" value="ServiceOSS"/>
+        <property name="service" ref="serviceOSSImpl"/>
+        <property name="serviceInterface" value="com.jnshu.service.ServiceOSS"/>
+        <property name="registryPort" value="9998"/>
+        <property name="servicePort" value="9998"/>
+    </bean>
+    <!-- 短信接口 -->
+    <bean id="serviceSMS" class="org.springframework.remoting.rmi.RmiServiceExporter">
+        <property name="serviceName" value="ServiceSMS"/>
+        <property name="service" ref="serviceSMSImpl"/>
+        <property name="serviceInterface" value="com.jnshu.service.ServiceSMS"/>
+        <property name="registryPort" value="9998"/>
+        <property name="servicePort" value="9998"/>
+    </bean>
+
+    <!-- 职业表接口 -->
+    <bean id="professionService" class="org.springframework.remoting.rmi.RmiServiceExporter">
+        <property name="serviceName" value="ProfessionService"/>
+        <property name="service" ref="professionServiceImpl"/>
+        <property name="serviceInterface" value="com.jnshu.service.ProfessionService"/>
+        <property name="registryPort" value="9998"/>
+        <property name="servicePort" value="9998"/>
+    </bean>
+    <!-- 用户接口 -->
+    <bean id="userService" class="org.springframework.remoting.rmi.RmiServiceExporter">
+        <property name="serviceName" value="UserService"/>
+        <property name="service" ref="userServiceImpl"/>
+        <property name="serviceInterface" value="com.jnshu.service.UserService"/>
+        <property name="registryPort" value="9998"/>
+        <property name="servicePort" value="9998"/>
+    </bean>
+    <!-- 后台管理接口 -->
+    <bean id="userQvService" class="org.springframework.remoting.rmi.RmiServiceExporter">
+        <property name="serviceName" value="UserQvService"/>
+        <property name="service" ref="userQvServieImpl"/>
+        <property name="serviceInterface" value="com.jnshu.service.UserQvService"/>
+        <property name="registryPort" value="9998"/>
+        <property name="servicePort" value="9998"/>
+    </bean>
+</beans>

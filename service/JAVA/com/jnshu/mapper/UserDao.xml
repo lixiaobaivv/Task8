@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jnshu.mapper.UserDao">
+    <!-- 登录 注册 -->
+    <insert id="register" parameterType="com.jnshu.entity.User">
+        insert into user (name,password,salt,despwd,userIphone,head_tx,emali) value (#{name},#{password},#{salt},#{despwd},#{userIphone},#{head_tx},#{emali})
+    </insert>
+
+    <select id="selectByid"  parameterType="java.lang.Long" resultType="com.jnshu.entity.User">
+        SELECT * FROM user WHERE id = #{id}
+    </select>
+
+    <select id="findIphone" parameterType="String" resultType="com.jnshu.entity.User">
+        select * from user where userIphone=#{userIphone}
+    </select>
+
+    <select id="findMaiUser" parameterType="String" resultType="com.jnshu.entity.User">
+        select * from user where emali=#{emali}
+    </select>
+
+    <select id="findUserByname" parameterType="String" resultType="com.jnshu.entity.User">
+        select * from user where name =#{name }
+    </select>
+
+    <select id="findCodeUser" parameterType="String" resultType="com.jnshu.entity.User">
+        select * from user where code =#{code}
+    </select>
+
+    <select id="selectByuser" resultType="com.jnshu.entity.User">
+        SELECT * FROM user WHERE name=#{param1} AND password=#{param2}
+    </select>
+
+
+    <update id="updateTimeByid" parameterType="java.lang.Long">
+        update user set landtime = unix_timestamp(now()) WHERE id = #{id}
+    </update>
+    
+    <update id="updatetx" parameterType="com.jnshu.entity.User">
+        update user set head_tx = #{head_tx} where id = #{id}
+    </update>
+
+    <update id="updateUser" parameterType="com.jnshu.entity.User">
+        update user set name=#{name},password=#{password},salt=#{salt},userIphone=#{userIphone},head_tx=#{head_tx},emali=#{emali},code=#{code},emailState=#{emailState} where id=#{id}
+    </update>
+
+</mapper>
